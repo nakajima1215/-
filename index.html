@@ -369,11 +369,11 @@ select:focus,input:focus{outline:none;}
 
 
 
-#pinLock{position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;z-index:9999;}
+#pinLock{position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;z-index:9999;touch-action:manipulation;}
 #pinLock.gone{display:none;}
 .pbox{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#1e293b;border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;width:240px;box-shadow:0 12px 40px rgba(0,0,0,0.7);}
 @media(min-width:769px){.pbox{left:calc(100px + 50vw - 120px);transform:translate(-50%,-50%);}}
-@media(max-width:768px){.pbox{top:calc(50% - 40px);}}
+@media(max-width:768px){.pbox{top:45%;overflow-y:auto;max-height:95vh;}}
 .pbox-logo{width:56px;height:56px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .pbox-title{font-size:16px;font-weight:700;color:#fff;}
 .pbox-sub{font-size:11px;color:rgba(255,255,255,0.45);margin-top:-8px;}
@@ -382,7 +382,7 @@ select:focus,input:focus{outline:none;}
 .pdot.lit{background:#06b6d4;border-color:#06b6d4;}
 .perr{font-size:11px;color:#f87171;min-height:16px;}
 .pkbd{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;}
-.pkey{height:52px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.07);color:#fff;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.1s;}
+.pkey{height:52px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.07);color:#fff;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.1s;-webkit-text-size-adjust:none;touch-action:manipulation;}
 .pkey:active{background:rgba(255,255,255,0.2);}
 .pkey.kdel{font-size:15px;color:rgba(255,255,255,0.55);}
 .pkey.kemp{background:transparent;border:none;cursor:default;}
@@ -1728,6 +1728,10 @@ setInterval(save,30000);
     if(lock.classList.contains("gone")) return;
     if(e.key>="0"&&e.key<="9") tap(e.key);
     if(e.key==="Backspace") del();
+  });
+  /* prevent iOS double-tap zoom on PIN buttons */
+  document.getElementById("pKbd").addEventListener("touchend",function(e){
+    e.preventDefault();
   });
 })();
 
