@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -364,46 +363,55 @@ select:focus,input:focus{outline:none;}
 
 }
 
-/* ===== PIN LOCK ===== */
-.pin-lock{position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--bg);z-index:99999;}
-.pin-card{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#1e293b;border-radius:18px;padding:20px 22px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);width:220px;max-width:90vw;}
-.pin-lock.hidden{display:none;}
-.pin-logo{width:52px;height:52px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
-.pin-title{font-size:15px;font-weight:700;color:#fff;text-align:center;}
-.pin-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:-8px;text-align:center;}
-.pin-dots{display:flex;gap:10px;margin:4px 0;}
-.pin-dot{width:10px;height:10px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);background:transparent;transition:background 0.15s;}
-.pin-dot.filled{background:var(--teal);border-color:var(--teal);}
-.pin-error{font-size:13px;color:#ef4444;height:18px;text-align:center;}
-.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:100%;}
-.pin-btn{height:46px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff;font-size:18px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.12s;}
-.pin-btn:active{background:rgba(255,255,255,0.2);}
-.pin-btn.del{font-size:16px;color:rgba(255,255,255,0.6);}
-.pin-btn.empty{border:none;background:transparent;cursor:default;}
 
+
+
+
+
+
+#pinLock{position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;z-index:9999;}
+#pinLock.gone{display:none;}
+.pbox{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#1e293b;border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;width:240px;box-shadow:0 12px 40px rgba(0,0,0,0.7);}
+@media(min-width:769px){.pbox{left:calc(100px + 50vw - 120px);transform:translate(-50%,-50%);}}
+@media(max-width:768px){.pbox{top:calc(50% - 40px);}}
+.pbox-logo{width:56px;height:56px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.pbox-title{font-size:16px;font-weight:700;color:#fff;}
+.pbox-sub{font-size:11px;color:rgba(255,255,255,0.45);margin-top:-8px;}
+.pbox-dots{display:flex;gap:12px;}
+.pdot{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);background:transparent;transition:all 0.15s;}
+.pdot.lit{background:#06b6d4;border-color:#06b6d4;}
+.perr{font-size:11px;color:#f87171;min-height:16px;}
+.pkbd{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;}
+.pkey{height:52px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.07);color:#fff;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.1s;}
+.pkey:active{background:rgba(255,255,255,0.2);}
+.pkey.kdel{font-size:15px;color:rgba(255,255,255,0.55);}
+.pkey.kemp{background:transparent;border:none;cursor:default;}
 </style>
 </head>
 <body>
 
-<!-- PIN LOCK -->
-<div class="pin-lock" id="pinLock">
-  <div class="pin-card">
-  <div class="pin-logo" id="pinLogoWrap"></div>
-  <div class="pin-title" id="pinAppTitle">フォークリフト点検</div>
-  <div class="pin-sub">PINコードを入力してください</div>
-  <div class="pin-dots" id="pinDots">
-    <div class="pin-dot" id="pd0"></div>
-    <div class="pin-dot" id="pd1"></div>
-    <div class="pin-dot" id="pd2"></div>
-    <div class="pin-dot" id="pd3"></div>
-  </div>
-  <div class="pin-error" id="pinError"></div>
-  <div class="pin-grid" id="pinGrid"></div>
+<div id="pinLock">
+  <div class="pbox">
+    <div class="pbox-logo" id="pLogo"></div>
+    <div class="pbox-title">フォークリフト点検</div>
+    <div class="pbox-sub">PINコードを入力してください</div>
+    <div class="pbox-dots">
+      <div class="pdot" id="p0"></div>
+      <div class="pdot" id="p1"></div>
+      <div class="pdot" id="p2"></div>
+      <div class="pdot" id="p3"></div>
+    </div>
+    <div class="perr" id="pErr"></div>
+    <div class="pkbd" id="pKbd"></div>
   </div>
 </div>
 
 
-<div class="layout" id="appLayout" style="visibility:hidden;">
+
+
+
+
+<div class="layout" id="appWrap" style="display:none;">
 
 <!-- SIDEBAR -->
 <div class="sidebar">
@@ -456,7 +464,6 @@ select:focus,input:focus{outline:none;}
       <button class="lang-btn" id="langBtn">&#x1F1FB;&#x1F1F3; VI</button>
     </div>
   </div>
-
   <!-- Content -->
   <div class="content">
 
@@ -1674,98 +1681,55 @@ setInterval(save,30000);
 
 
 
-/* ===== PIN 認証 ===== */
-var PIN_CODE = "0447"; /* ← PINコードをここで変更 */
-var PIN_SESSION_KEY = "fl_pin_ok";
-var pinInput = "";
 
-function initPin(){
-  document.body.style.overflow="hidden";
-  /* セッション中は認証済みならスキップ */
-  if(sessionStorage.getItem(PIN_SESSION_KEY)==="1"){
-    document.getElementById("pinLock").classList.add("hidden");
-    document.getElementById("appLayout").style.visibility="visible";
-    return;
-  }
 
-  /* ロゴを複製 */
-  var logoSrc = document.querySelector(".logo-icon img");
-  if(logoSrc){
-    var cl = logoSrc.cloneNode(true);
-    cl.style.cssText="width:38px;height:38px;object-fit:contain;";
-    document.getElementById("pinLogoWrap").appendChild(cl);
-  }
 
-  /* 数字キーパッド生成 */
-  var grid = document.getElementById("pinGrid");
-  var keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
-  keys.forEach(function(k){
-    var btn = document.createElement("button");
-    btn.textContent = k;
-    if(k===""){
-      btn.className="pin-btn empty"; btn.disabled=true;
-    } else if(k==="⌫"){
-      btn.className="pin-btn del";
-      btn.addEventListener("click", pinDel);
-    } else {
-      btn.className="pin-btn";
-      btn.addEventListener("click", function(){ pinTap(k); });
-    }
-    grid.appendChild(btn);
+
+
+
+
+
+(function(){
+  var PIN="0447", buf="", KEY="fp_ok";
+  var lock=document.getElementById("pinLock");
+  var wrap=document.getElementById("appWrap");
+
+  function show(){ lock.classList.add("gone"); if(wrap) wrap.style.removeProperty("display"); }
+
+  if(sessionStorage.getItem(KEY)==="1"){ show(); return; }
+
+  /* copy logo */
+  var img=document.querySelector(".logo-icon img");
+  if(img){ var c=img.cloneNode(true); c.style.cssText="width:42px;height:42px;object-fit:contain;"; document.getElementById("pLogo").appendChild(c); }
+
+  /* build keypad */
+  ["1","2","3","4","5","6","7","8","9"," ","0","⌫"].forEach(function(k){
+    var b=document.createElement("button");
+    b.textContent=k===" "?"":k;
+    b.className="pkey"+(k==="⌫"?" kdel":k===" "?" kemp":"");
+    b.disabled=(k===" ");
+    if(k==="⌫") b.addEventListener("click",del);
+    else if(k!==" ") b.addEventListener("click",function(){ tap(k); });
+    document.getElementById("pKbd").appendChild(b);
   });
-}
 
-function pinTap(n){
-  if(pinInput.length>=4) return;
-  pinInput+=n;
-  updatePinDots();
-  if(pinInput.length===4) setTimeout(checkPin, 150);
-}
-
-function pinDel(){
-  pinInput=pinInput.slice(0,-1);
-  updatePinDots();
-  document.getElementById("pinError").textContent="";
-}
-
-function updatePinDots(){
-  for(var i=0;i<4;i++){
-    var dot=document.getElementById("pd"+i);
-    if(dot) dot.className="pin-dot"+(i<pinInput.length?" filled":"");
+  function tap(n){
+    if(buf.length>=4) return;
+    buf+=n; render();
+    if(buf.length===4) setTimeout(check,120);
   }
-}
-
-function checkPin(){
-  if(pinInput===PIN_CODE){
-    sessionStorage.setItem(PIN_SESSION_KEY,"1");
-    document.getElementById("pinLock").classList.add("hidden");
-    document.getElementById("appLayout").style.visibility="visible";
-    document.body.style.overflow="";
-  } else {
-    document.getElementById("pinError").textContent=
-      S.lang==="ja"?"PINコードが違います":"Mã PIN không đúng";
-    pinInput="";
-    updatePinDots();
-    /* shake animation */
-    var dots=document.getElementById("pinDots");
-    dots.style.transition="transform 0.05s";
-    var i=0,dirs=[6,-6,6,-6,0];
-    (function shake(){
-      if(i>=dirs.length){dots.style.transform="";return;}
-      dots.style.transform="translateX("+dirs[i]+"px)";
-      i++; setTimeout(shake,60);
-    })();
+  function del(){ buf=buf.slice(0,-1); render(); document.getElementById("pErr").textContent=""; }
+  function render(){ for(var i=0;i<4;i++) document.getElementById("p"+i).className="pdot"+(i<buf.length?" lit":""); }
+  function check(){
+    if(buf===PIN){ sessionStorage.setItem(KEY,"1"); show(); }
+    else{ document.getElementById("pErr").textContent="PINコードが違います"; buf=""; render(); }
   }
-}
-
-/* キーボード対応 */
-document.addEventListener("keydown",function(e){
-  if(document.getElementById("pinLock").classList.contains("hidden")) return;
-  if(e.key>="0"&&e.key<="9") pinTap(e.key);
-  if(e.key==="Backspace") pinDel();
-});
-
-initPin();
+  document.addEventListener("keydown",function(e){
+    if(lock.classList.contains("gone")) return;
+    if(e.key>="0"&&e.key<="9") tap(e.key);
+    if(e.key==="Backspace") del();
+  });
+})();
 
 </script>
 
