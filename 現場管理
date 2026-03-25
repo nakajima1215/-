@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>現場管理アプリ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#111418;--s1:#181c22;--s2:#1f2530;--s3:#252d3a;
+  --bd:#2c3547;--bd2:#3a4560;
+  --ac:#e8a020;--ac2:#20a8e8;--ac3:#20e880;--rd:#e84040;
+  --tx:#dde3f0;--t2:#8a96b8;--t3:#4a5270;--r:10px;
+}
+body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;min-height:100vh;}
+#app-header{position:sticky;top:0;z-index:200;background:var(--s1);border-bottom:2px solid var(--ac);padding:0 20px;height:52px;display:flex;align-items:center;gap:14px;}
+#app-header .logo{font-size:18px;font-weight:900;color:var(--ac);letter-spacing:.08em;text-transform:uppercase;}
+#app-header .subtitle{font-size:11px;color:var(--t3);}
+#app-header .spacer{flex:1;}
+#app-header .user-pill{background:var(--s3);border:1px solid var(--bd2);border-radius:20px;padding:4px 14px;font-size:12px;color:var(--t2);}
+.offline-badge{background:rgba(32,232,128,.15);border:1px solid var(--ac3);color:var(--ac3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+#app-nav{display:flex;background:var(--s1);border-bottom:1px solid var(--bd);padding:0 20px;overflow-x:auto;}
+.nav-btn{padding:12px 18px;border:none;border-bottom:3px solid transparent;background:transparent;color:var(--t2);font-family:inherit;font-size:13px;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.nav-btn:hover{color:var(--tx);}
+.nav-btn.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:700;}
+.panel{display:none;padding:20px;max-width:1000px;margin:0 auto;}
+.panel.on{display:block;}
+.sh{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+.sh h2{font-size:16px;font-weight:800;letter-spacing:.04em;}
+.sh .cnt{font-size:11px;color:var(--t3);font-family:monospace;}
+.sh .sp{flex:1;}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px;transition:border-color .2s,transform .15s;}
+.card:hover{border-color:var(--ac);transform:translateY(-1px);}
+label{font-size:11px;color:var(--t2);display:block;margin-bottom:4px;margin-top:10px;}
+input,textarea,select{width:100%;padding:9px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:7px;color:var(--tx);font-family:inherit;font-size:13px;outline:none;transition:border-color .2s;}
+input:focus,textarea:focus,select:focus{border-color:var(--ac);}
+textarea{min-height:75px;resize:vertical;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-ac{background:var(--ac);color:#000;}.btn-ac:hover{background:#f0b030;}
+.btn-b{background:var(--ac2);color:#000;}.btn-b:hover{background:#30b8f0;}
+.btn-g{background:var(--ac3);color:#000;}.btn-g:hover{background:#30f090;}
+.btn-r{background:var(--rd);color:#fff;}.btn-r:hover{opacity:.85;}
+.btn-gh{background:var(--s2);color:var(--t2);border:1px solid var(--bd);}.btn-gh:hover{color:var(--tx);border-color:var(--ac);}
+.btn-sm{padding:5px 12px;font-size:12px;}.btn-xs{padding:3px 8px;font-size:11px;}
+.flex-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-ac{background:rgba(232,160,32,.18);color:var(--ac);}
+.b-b{background:rgba(32,168,232,.18);color:var(--ac2);}
+.b-g{background:rgba(32,232,128,.18);color:var(--ac3);}
+.b-r{background:rgba(232,64,64,.18);color:var(--rd);}
+.media-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.media-thumb{position:relative;width:90px;height:70px;border-radius:6px;overflow:hidden;border:1px solid var(--bd);cursor:pointer;flex-shrink:0;}
+.media-thumb img,.media-thumb video{width:100%;height:100%;object-fit:cover;}
+.media-thumb .del-media{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.media-thumb .vid-icon{position:absolute;bottom:4px;left:4px;font-size:14px;}
+.blade-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;}
+.bc{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:14px;}
+.bc-name{font-weight:800;font-size:14px;margin-bottom:6px;}
+.bc-row{font-size:12px;color:var(--t2);margin-bottom:3px;}
+.bar-wrap{background:var(--s3);border-radius:4px;height:7px;margin:8px 0;}
+.bar{height:7px;border-radius:4px;transition:width .6s;}
+#chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:420px;}
+#chat-msgs{flex:1;overflow-y:auto;padding:12px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);display:flex;flex-direction:column;gap:8px;margin-bottom:8px;}
+.msg{max-width:80%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.7;}
+.msg-me{align-self:flex-end;background:var(--ac);color:#000;border-bottom-right-radius:3px;}
+.msg-other{align-self:flex-start;background:var(--s3);border:1px solid var(--bd);border-bottom-left-radius:3px;}
+.msg-sys{align-self:center;background:var(--s2);border:1px solid var(--bd);font-size:11px;color:var(--t3);padding:4px 12px;border-radius:20px;}
+.msg-meta{font-size:10px;margin-top:3px;opacity:.6;font-family:monospace;}
+.chat-in{display:flex;gap:8px;}
+.chat-in textarea{flex:1;min-height:48px;max-height:100px;}
+#lightbox{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.92);align-items:center;justify-content:center;}
+#lightbox.on{display:flex;}
+#lightbox img,#lightbox video{max-width:92vw;max-height:88vh;border-radius:8px;}
+#lb-close{position:absolute;top:16px;right:20px;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:24px;cursor:pointer;border-radius:50%;width:40px;height:40px;}
+.modal-bg{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.65);align-items:center;justify-content:center;}
+.modal-bg.on{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--bd2);border-radius:12px;padding:22px;width:92%;max-width:520px;max-height:90vh;overflow-y:auto;}
+.modal h3{font-size:15px;font-weight:800;margin-bottom:14px;color:var(--ac);}
+.setting-sec{margin-bottom:28px;}
+.setting-sec h3{font-size:13px;font-weight:700;color:var(--ac);border-bottom:1px solid var(--bd);padding-bottom:8px;margin-bottom:12px;}
+#toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:var(--ac3);color:#000;padding:9px 20px;border-radius:8px;font-weight:700;font-size:13px;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;}
+#toast.on{opacity:1;transform:translateY(0);}
+.empty{text-align:center;padding:40px;color:var(--t3);}
+.empty .ico{font-size:36px;margin-bottom:8px;}
+hr{border:none;border-top:1px solid var(--bd);margin:12px 0;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--s1);}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px;}
+@media(max-width:600px){.panel{padding:12px;}}
+</style>
+</head>
+<body>
+
+<div id="app-header">
+  <div class="logo">現場管理</div>
+  <div class="subtitle">FIELD HUB</div>
+  <span class="offline-badge">&#x1F512; 完全オフライン</span>
+  <div class="spacer"></div>
+  <div class="user-pill" id="user-pill">&#x1F464; ゲスト</div>
+</div>
+
+<div id="app-nav">
+  <button class="nav-btn on" onclick="goTab('daily')">&#x1F4CB; 日々の記録</button>
+  <button class="nav-btn" onclick="goTab('blade')">&#x1F52A; 刃物管理</button>
+  <button class="nav-btn" onclick="goTab('chat')">&#x1F4AC; チャット</button>
+  <button class="nav-btn" onclick="goTab('settings')">&#x2699; 設定</button>
+</div>
+
+<div id="tab-daily" class="panel on">
+  <div class="sh">
+    <h2>&#x1F4CB; 日々の記録</h2>
+    <span class="cnt" id="log-cnt"></span>
+    <div class="sp"></div>
+    <div class="flex-row">
+      <select id="f-user" style="width:auto;" onchange="renderLogs()"><option value="">全メンバー</option></select>
+      <select id="f-date" style="width:auto;" onchange="renderLogs()"><option value="">全日付</option></select>
+      <button class="btn btn-ac" onclick="openLogModal()">+ 新規記録</button>
+    </div>
+  </div>
+  <div id="logs-list"></div>
+</div>
+
+<div id="tab-blade" class="panel">
+  <div class="sh">
+    <h2>&#x1F52A; 刃物管理</h2>
+    <span class="cnt" id="blade-cnt"></span>
+    <div class="sp"></div>
+    <button class="btn btn-ac" onclick="openBladeModal(0)">+ 刃物を登録</button>
+  </div>
+  <div class="flex-row" style="margin-bottom:16px;gap:12px;">
+    <div class="card" style="flex:1;min-width:100px;padding:12px 16px;margin-bottom:0;">
+      <div style="font-size:22px;font-weight:900;color:var(--rd);" id="blade-alert-cnt">0</div>
+      <div style="font-size:11px;color:var(--t2);">要交換</div>
+    </div>
+    <div class="card" style="flex:1;min-width:100px;padding:12px 16px;margin-bottom:0;">
+      <div style="font-size:22px;font-weight:900;color:var(--ac);" id="blade-warn-cnt">0</div>
+      <div style="font-size:11px;color:var(--t2);">注意</div>
+    </div>
+    <div class="card" style="flex:1;min-width:100px;padding:12px 16px;margin-bottom:0;">
+      <div style="font-size:22px;font-weight:900;color:var(--ac3);" id="blade-ok-cnt">0</div>
+      <div style="font-size:11px;color:var(--t2);">正常</div>
+    </div>
+  </div>
+  <div id="blades-list" class="blade-grid"></div>
+</div>
+
+<div id="tab-chat" class="panel">
+  <div id="chat-wrap">
+    <div class="flex-row" style="margin-bottom:10px;">
+      <strong>&#x1F4AC; チームチャット</strong>
+      <div class="sp"></div>
+      <button class="btn btn-gh btn-sm" onclick="exportChat()">&#x1F4E4; 履歴保存</button>
+      <button class="btn btn-gh btn-sm" onclick="clearChat()">&#x1F5D1; クリア</button>
+    </div>
+    <div id="chat-msgs"></div>
+    <div class="chat-in">
+      <textarea id="chat-input" placeholder="メッセージを入力（Enterで送信、Shift+Enterで改行）" onkeydown="chatKey(event)"></textarea>
+      <button class="btn btn-ac" onclick="sendMsg()">送信</button>
+    </div>
+  </div>
+</div>
+
+<div id="tab-settings" class="panel">
+  <div class="setting-sec">
+    <h3>&#x1F464; ユーザー設定</h3>
+    <label>あなたの名前</label>
+    <input id="s-name" placeholder="例：田中" oninput="ss('name',this.value)">
+    <label>チームメンバー（改行区切り）</label>
+    <textarea id="s-members" placeholder="田中&#10;鈴木&#10;山田" style="min-height:90px;" oninput="ss('members',this.value)"></textarea>
+  </div>
+  <div class="setting-sec">
+    <h3>&#x1F52A; 刃物カテゴリ設定</h3>
+    <label>カテゴリ（改行区切り）</label>
+    <textarea id="s-blade-cats" placeholder="丸刃&#10;角刃&#10;スライサー&#10;その他" style="min-height:80px;" oninput="ss('bladeCats',this.value)"></textarea>
+  </div>
+  <div class="setting-sec">
+    <h3>&#x1F4C1; データ管理</h3>
+    <p style="font-size:12px;color:var(--t2);margin-bottom:12px;">
+      全データをJSONファイルとして書き出せます。OneDrive・Google Driveに保存してチーム共有できます。
+    </p>
+    <div class="flex-row">
+      <button class="btn btn-b" onclick="exportAll()">&#x1F4E4; エクスポート</button>
+      <button class="btn btn-gh" onclick="document.getElementById('import-file').click()">&#x1F4E5; インポート</button>
+      <button class="btn btn-r btn-sm" onclick="clearAll()">&#x1F5D1; 全データ削除</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none;" onchange="doImport(event)">
+  </div>
+  <div class="setting-sec">
+    <h3>&#x2139; アプリ情報</h3>
+    <p style="font-size:12px;color:var(--t2);line-height:1.8;">
+      &#x2705; データ保存：このブラウザのみ（localStorage）<br>
+      &#x2705; 写真・動画：Base64形式でブラウザ内に保存<br>
+      &#x26A0; 写真・動画を大量保存するとストレージ上限に近づく場合があります
+    </p>
+  </div>
+</div>
+
+<div class="modal-bg" id="log-modal">
+  <div class="modal">
+    <h3>&#x1F4CB; 記録を追加</h3>
+    <label>日付</label><input type="date" id="l-date">
+    <label>担当者</label><select id="l-user"></select>
+    <label>カテゴリ</label>
+    <select id="l-cat">
+      <option>作業報告</option><option>トラブル・異常</option>
+      <option>提案・改善</option><option>品質確認</option><option>その他</option>
+    </select>
+    <label>内容</label>
+    <textarea id="l-content" placeholder="作業内容・気づいた点などを記録してください"></textarea>
+    <label>&#x1F4F7; 写真・動画を添付</label>
+    <div id="l-media-preview" class="media-grid"></div>
+    <div style="margin-top:8px;">
+      <input type="file" id="l-media-input" accept="image/*,video/*" multiple style="display:none;" onchange="addMedia('log',event)">
+      <button class="btn btn-gh btn-sm" onclick="document.getElementById('l-media-input').click()">&#x1F4CE; ファイルを選択</button>
+      <span style="font-size:11px;color:var(--t3);margin-left:8px;">複数選択可</span>
+    </div>
+    <div class="flex-row" style="margin-top:16px;">
+      <button class="btn btn-ac" onclick="saveLog()">保存</button>
+      <button class="btn btn-gh" onclick="closeModal('log-modal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="blade-modal">
+  <div class="modal">
+    <h3 id="bm-title">&#x1F52A; 刃物を登録</h3>
+    <input type="hidden" id="b-edit-id">
+    <label>刃物名・識別番号</label><input id="b-name" placeholder="例：丸刃 #3">
+    <label>カテゴリ</label><select id="b-cat"></select>
+    <label>設置場所・ライン</label><input id="b-loc" placeholder="例：ライン1、A工程">
+    <label>最終交換日</label><input type="date" id="b-last">
+    <label>交換サイクル（日）</label><input type="number" id="b-cycle" placeholder="例：30" min="1">
+    <label>メモ</label><textarea id="b-note" style="min-height:55px;" placeholder="注意事項など"></textarea>
+    <div class="flex-row" style="margin-top:16px;">
+      <button class="btn btn-ac" onclick="saveBlade()">保存</button>
+      <button class="btn btn-gh" onclick="closeModal('blade-modal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="hist-modal">
+  <div class="modal" style="max-width:580px;">
+    <h3 id="hm-title">&#x1F52A; 交換履歴</h3>
+    <div id="hist-list" style="max-height:260px;overflow-y:auto;margin-bottom:12px;"></div>
+    <hr>
+    <p style="font-size:13px;font-weight:700;color:var(--ac);margin-bottom:8px;">新しい交換を記録</p>
+    <input type="hidden" id="h-blade-id">
+    <label>交換日</label><input type="date" id="h-date">
+    <label>担当者</label><select id="h-user"></select>
+    <label>状態・メモ</label><input id="h-note" placeholder="例：摩耗により交換">
+    <label>&#x1F4F7; 交換時の写真・動画</label>
+    <div id="h-media-preview" class="media-grid"></div>
+    <div style="margin-top:8px;">
+      <input type="file" id="h-media-input" accept="image/*,video/*" multiple style="display:none;" onchange="addMedia('hist',event)">
+      <button class="btn btn-gh btn-sm" onclick="document.getElementById('h-media-input').click()">&#x1F4CE; ファイルを選択</button>
+    </div>
+    <div class="flex-row" style="margin-top:14px;">
+      <button class="btn btn-g" onclick="recordChange()">交換を記録</button>
+      <button class="btn btn-gh" onclick="closeModal('hist-modal')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <button id="lb-close" onclick="closeLB()">&#x2715;</button>
+  <div id="lb-content"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+function get(k){try{return JSON.parse(localStorage.getItem('fh_'+k));}catch(e){return null;}}
+function set(k,v){localStorage.setItem('fh_'+k,JSON.stringify(v));}
+function gs(){return get('settings')||{};}
+function ss(k,v){var s=gs();s[k]=v;set('settings',s);applySettings();}
+
+function applySettings(){
+  var s=gs();
+  document.getElementById('user-pill').textContent=s.name||'ゲスト';
+  var sn=document.getElementById('s-name');if(s.name&&sn)sn.value=s.name;
+  var sm=document.getElementById('s-members');if(s.members&&sm)sm.value=s.members;
+  var sb=document.getElementById('s-blade-cats');if(s.bladeCats&&sb)sb.value=s.bladeCats;
+  updateDropdowns();
+}
+function members(){var s=gs();return s.members?s.members.split('\n').map(function(m){return m.trim();}).filter(Boolean):['メンバー1','メンバー2'];}
+function bladeCats(){var s=gs();return s.bladeCats?s.bladeCats.split('\n').map(function(c){return c.trim();}).filter(Boolean):['丸刃','角刃','スライサー','その他'];}
+
+function updateDropdowns(){
+  var ms=members();
+  ['l-user','h-user'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    var v=el.value;
+    el.innerHTML=ms.map(function(m){return '<option>'+m+'</option>';}).join('');
+    el.value=v;
+  });
+  var fu=document.getElementById('f-user');
+  if(fu){fu.innerHTML='<option value="">全メンバー</option>'+ms.map(function(m){return '<option>'+m+'</option>';}).join('');}
+  var bc=bladeCats(),bcat=document.getElementById('b-cat');
+  if(bcat){var v=bcat.value;bcat.innerHTML=bc.map(function(c){return '<option>'+c+'</option>';}).join('');bcat.value=v;}
+}
+
+function goTab(name){
+  var tabs=['daily','blade','chat','settings'];
+  document.querySelectorAll('.nav-btn').forEach(function(b,i){b.classList.toggle('on',tabs[i]===name);});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
+  document.getElementById('tab-'+name).classList.add('on');
+  if(name==='daily'){updateDateFilter();renderLogs();}
+  if(name==='blade')renderBlades();
+  if(name==='chat')renderChat();
+  if(name==='settings')applySettings();
+}
+
+var pendingMedia={log:[],hist:[]};
+
+function addMedia(ctx,e){
+  var files=Array.from(e.target.files);if(!files.length)return;
+  var promises=files.map(function(f){
+    return new Promise(function(res){
+      var r=new FileReader();
+      r.onload=function(ev){res({name:f.name,type:f.type,data:ev.target.result});};
+      r.readAsDataURL(f);
+    });
+  });
+  Promise.all(promises).then(function(items){
+    pendingMedia[ctx]=pendingMedia[ctx].concat(items);
+    renderMediaPreview(ctx);e.target.value='';
+  });
+}
+
+function renderMediaPreview(ctx){
+  var pid=ctx==='log'?'l-media-preview':'h-media-preview';
+  var el=document.getElementById(pid);
+  el.innerHTML=pendingMedia[ctx].map(function(m,i){
+    var thumb=m.type.indexOf('video')===0
+      ?'<video src="'+m.data+'" muted></video><span class="vid-icon">&#x25B6;</span>'
+      :'<img src="'+m.data+'" alt="">';
+    return '<div class="media-thumb" onclick="openLB(\''+m.data+'\',\''+m.type+'\')">'
+      +thumb+'<button class="del-media" onclick="event.stopPropagation();removePendingMedia(\''+ctx+'\','+i+')">&#x2715;</button></div>';
+  }).join('');
+}
+
+function removePendingMedia(ctx,i){pendingMedia[ctx].splice(i,1);renderMediaPreview(ctx);}
+
+function mediaThumbsHTML(arr){
+  if(!arr||!arr.length)return'';
+  return'<div class="media-grid">'+arr.map(function(m){
+    var thumb=m.type.indexOf('video')===0
+      ?'<video src="'+m.data+'" muted></video><span class="vid-icon">&#x25B6;</span>'
+      :'<img src="'+m.data+'" alt="">';
+    return'<div class="media-thumb" onclick="openLB(\''+m.data+'\',\''+m.type+'\')">'+thumb+'</div>';
+  }).join('')+'</div>';
+}
+
+function openLB(src,type){
+  var c=document.getElementById('lb-content');
+  c.innerHTML=type&&type.indexOf('video')===0
+    ?'<video src="'+src+'" controls autoplay style="max-width:92vw;max-height:88vh;border-radius:8px;"></video>'
+    :'<img src="'+src+'" style="max-width:92vw;max-height:88vh;border-radius:8px;">';
+  document.getElementById('lightbox').classList.add('on');
+}
+function closeLB(){
+  document.getElementById('lightbox').classList.remove('on');
+  document.getElementById('lb-content').innerHTML='';
+}
+document.getElementById('lightbox').addEventListener('click',function(e){if(e.target===e.currentTarget)closeLB();});
+
+function getLogs(){return get('logs')||[];}
+function setLogs(v){set('logs',v);}
+
+function openLogModal(){
+  updateDropdowns();
+  document.getElementById('l-date').value=today();
+  document.getElementById('l-content').value='';
+  pendingMedia.log=[];renderMediaPreview('log');
+  document.getElementById('log-modal').classList.add('on');
+}
+
+function saveLog(){
+  var content=document.getElementById('l-content').value.trim();
+  if(!content){toast('内容を入力してください');return;}
+  var log={
+    id:Date.now(),
+    date:document.getElementById('l-date').value,
+    user:document.getElementById('l-user').value,
+    cat:document.getElementById('l-cat').value,
+    content:content,
+    media:pendingMedia.log.slice(),
+    ts:new Date().toLocaleString('ja-JP')
+  };
+  var logs=getLogs();logs.unshift(log);setLogs(logs);
+  pendingMedia.log=[];closeModal('log-modal');updateDateFilter();renderLogs();
+  toast('記録を保存しました');
+}
+
+function deleteLog(id){
+  if(!confirm('この記録を削除しますか？'))return;
+  setLogs(getLogs().filter(function(l){return l.id!==id;}));
+  updateDateFilter();renderLogs();toast('削除しました');
+}
+
+function renderLogs(){
+  var logs=getLogs();
+  var fu=document.getElementById('f-user').value;
+  var fd=document.getElementById('f-date').value;
+  var list=logs;
+  if(fu)list=list.filter(function(l){return l.user===fu;});
+  if(fd)list=list.filter(function(l){return l.date===fd;});
+  document.getElementById('log-cnt').textContent=list.length+' 件';
+  var c=document.getElementById('logs-list');
+  if(!list.length){c.innerHTML='<div class="empty"><div class="ico">&#x1F4CB;</div>記録がありません。「+ 新規記録」から追加してください。</div>';return;}
+  var bm={'作業報告':'b-b','トラブル・異常':'b-r','提案・改善':'b-g','品質確認':'b-ac','その他':'b-b'};
+  c.innerHTML=list.map(function(l){
+    return '<div class="card">'
+      +'<div class="flex-row" style="margin-bottom:8px;">'
+      +'<span class="badge '+(bm[l.cat]||'b-b')+'">'+esc(l.cat)+'</span>'
+      +'<strong>'+esc(l.user||'不明')+'</strong>'
+      +'<span style="font-size:11px;color:var(--t3);font-family:monospace;">'+l.date+'</span>'
+      +'<span style="font-size:11px;color:var(--t3);">'+l.ts+'</span>'
+      +'<div style="flex:1;"></div>'
+      +'<button class="btn btn-gh btn-xs" onclick="deleteLog('+l.id+')">&#x1F5D1;</button>'
+      +'</div>'
+      +'<div style="line-height:1.75;white-space:pre-wrap;">'+esc(l.content)+'</div>'
+      +mediaThumbsHTML(l.media)
+      +'</div>';
+  }).join('');
+}
+
+function updateDateFilter(){
+  var dates=getLogs().map(function(l){return l.date;});
+  dates=dates.filter(function(v,i,a){return a.indexOf(v)===i;}).sort().reverse();
+  var sel=document.getElementById('f-date'),v=sel.value;
+  sel.innerHTML='<option value="">全日付</option>'+dates.map(function(d){return'<option>'+d+'</option>';}).join('');
+  sel.value=v;
+}
+
+function getBlades(){return get('blades')||[];}
+function setBlades(v){set('blades',v);}
+
+function openBladeModal(id){
+  updateDropdowns();
+  if(id){
+    var b=getBlades().filter(function(x){return x.id===id;})[0];
+    document.getElementById('bm-title').textContent='&#x1F52A; 刃物を編集';
+    document.getElementById('b-edit-id').value=id;
+    document.getElementById('b-name').value=b.name;
+    document.getElementById('b-loc').value=b.loc||'';
+    document.getElementById('b-last').value=b.last||'';
+    document.getElementById('b-cycle').value=b.cycle||'';
+    document.getElementById('b-note').value=b.note||'';
+    setTimeout(function(){document.getElementById('b-cat').value=b.cat;},50);
+  } else {
+    document.getElementById('bm-title').textContent='&#x1F52A; 刃物を登録';
+    document.getElementById('b-edit-id').value='';
+    document.getElementById('b-name').value='';
+    document.getElementById('b-loc').value='';
+    document.getElementById('b-last').value=today();
+    document.getElementById('b-cycle').value='';
+    document.getElementById('b-note').value='';
+  }
+  document.getElementById('blade-modal').classList.add('on');
+}
+
+function saveBlade(){
+  var name=document.getElementById('b-name').value.trim();
+  if(!name){toast('名前を入力してください');return;}
+  var editId=document.getElementById('b-edit-id').value;
+  var blade={
+    id:editId?parseInt(editId):Date.now(),
+    name:name,cat:document.getElementById('b-cat').value,
+    loc:document.getElementById('b-loc').value,
+    last:document.getElementById('b-last').value,
+    cycle:parseInt(document.getElementById('b-cycle').value)||30,
+    note:document.getElementById('b-note').value,
+    history:[]
+  };
+  var blades=getBlades();
+  if(editId){
+    var old=blades.filter(function(b){return b.id===blade.id;})[0];
+    blade.history=old?(old.history||[]):[];
+    blades=blades.map(function(b){return b.id===blade.id?blade:b;});
+  } else {
+    blades.push(blade);
+  }
+  setBlades(blades);closeModal('blade-modal');renderBlades();toast('保存しました');
+}
+
+function deleteBlade(id){
+  if(!confirm('この刃物を削除しますか？'))return;
+  setBlades(getBlades().filter(function(b){return b.id!==id;}));
+  renderBlades();toast('削除しました');
+}
+
+function openHistModal(id){
+  updateDropdowns();
+  var b=getBlades().filter(function(x){return x.id===id;})[0];
+  document.getElementById('hm-title').textContent='&#x1F52A; '+b.name+' 交換履歴';
+  document.getElementById('h-blade-id').value=id;
+  document.getElementById('h-date').value=today();
+  document.getElementById('h-note').value='';
+  pendingMedia.hist=[];renderMediaPreview('hist');
+  var hist=(b.history||[]).slice().reverse();
+  document.getElementById('hist-list').innerHTML=hist.length
+    ?hist.map(function(h){
+      return'<div class="card" style="margin-bottom:8px;padding:10px 14px;">'
+        +'<div class="flex-row" style="margin-bottom:6px;">'
+        +'<span class="badge b-g">'+h.date+'</span>'
+        +'<strong style="font-size:13px;">'+esc(h.user||'不明')+'</strong>'
+        +'<span style="font-size:11px;color:var(--t3);">'+esc(h.note||'')+'</span>'
+        +'</div>'+mediaThumbsHTML(h.media)+'</div>';
+    }).join('')
+    :'<p style="font-size:12px;color:var(--t3);padding:8px;">交換履歴がありません</p>';
+  document.getElementById('hist-modal').classList.add('on');
+}
+
+function recordChange(){
+  var id=parseInt(document.getElementById('h-blade-id').value);
+  var date=document.getElementById('h-date').value;
+  var blades=getBlades().map(function(b){
+    if(b.id===id){
+      b.last=date;b.history=b.history||[];
+      b.history.push({
+        date:date,user:document.getElementById('h-user').value,
+        note:document.getElementById('h-note').value,
+        media:pendingMedia.hist.slice(),
+        ts:new Date().toLocaleString('ja-JP')
+      });
+    }
+    return b;
+  });
+  setBlades(blades);pendingMedia.hist=[];
+  closeModal('hist-modal');renderBlades();toast('交換を記録しました');
+}
+
+function renderBlades(){
+  var blades=getBlades();
+  document.getElementById('blade-cnt').textContent=blades.length+' 本';
+  var alertN=0,warnN=0,okN=0;
+  var now=new Date();
+  var c=document.getElementById('blades-list');
+  if(!blades.length){c.innerHTML='<div class="empty" style="grid-column:1/-1;"><div class="ico">&#x1F52A;</div>刃物が登録されていません。</div>';return;}
+  c.innerHTML=blades.map(function(b){
+    var last=b.last?new Date(b.last):null;
+    var days=last?Math.floor((now-last)/86400000):9999;
+    var pct=b.cycle?Math.min(100,Math.round(days/b.cycle*100)):0;
+    var barC,sb;
+    if(pct>=100){barC='var(--rd)';sb='<span class="badge b-r">要交換</span>';alertN++;}
+    else if(pct>=70){barC='var(--ac)';sb='<span class="badge b-ac">注意</span>';warnN++;}
+    else{barC='var(--ac3)';sb='<span class="badge b-g">正常</span>';okN++;}
+    return'<div class="bc">'
+      +'<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">'
+      +'<div class="bc-name">'+esc(b.name)+'</div>'+sb+'</div>'
+      +'<div class="bc-row">&#x1F4CD; '+esc(b.loc||'—')+'&nbsp;&nbsp;&#x1F3F7; '+esc(b.cat||'—')+'</div>'
+      +'<div class="bc-row">&#x1F5D3; 最終交換：'+(b.last||'未設定')+'</div>'
+      +'<div class="bc-row">&#x23F1; '+(days<9999?days+'日経過':'—')+' / サイクル '+b.cycle+'日</div>'
+      +'<div class="bar-wrap"><div class="bar" style="width:'+pct+'%;background:'+barC+';"></div></div>'
+      +(b.note?'<div style="font-size:11px;color:var(--t2);margin-bottom:8px;">'+esc(b.note)+'</div>':'')
+      +'<div class="flex-row">'
+      +'<button class="btn btn-g btn-sm" onclick="openHistModal('+b.id+')">&#x1F4CB; 履歴</button>'
+      +'<button class="btn btn-gh btn-sm" onclick="openBladeModal('+b.id+')">&#x270F; 編集</button>'
+      +'<button class="btn btn-r btn-xs" onclick="deleteBlade('+b.id+')">&#x1F5D1;</button>'
+      +'</div></div>';
+  }).join('');
+  document.getElementById('blade-alert-cnt').textContent=alertN;
+  document.getElementById('blade-warn-cnt').textContent=warnN;
+  document.getElementById('blade-ok-cnt').textContent=okN;
+}
+
+function getChat(){return get('chat')||[];}
+function setChat(v){set('chat',v);}
+
+function renderChat(){
+  var msgs=getChat();
+  var c=document.getElementById('chat-msgs');
+  if(!msgs.length){c.innerHTML='<div class="msg msg-sys">チャット開始</div>';return;}
+  var myName=gs().name||'あなた';
+  c.innerHTML=msgs.map(function(m){
+    if(m.sys)return'<div class="msg msg-sys">'+esc(m.content)+'</div>';
+    var isMe=m.user===myName;
+    return'<div class="msg '+(isMe?'msg-me':'msg-other')+'" style="white-space:pre-wrap;">'+esc(m.content)+'<div class="msg-meta">'+esc(m.user)+' · '+m.ts+'</div></div>';
+  }).join('');
+  c.scrollTop=c.scrollHeight;
+}
+
+function sendMsg(){
+  var inp=document.getElementById('chat-input');
+  var text=inp.value.trim();if(!text)return;
+  inp.value='';
+  var msgs=getChat();
+  msgs.push({user:gs().name||'あなた',content:text,ts:new Date().toLocaleTimeString('ja-JP')});
+  setChat(msgs);renderChat();
+}
+
+function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function clearChat(){if(!confirm('チャット履歴をクリアしますか？'))return;setChat([]);renderChat();}
+
+function exportChat(){
+  var txt=getChat().map(function(m){return m.sys?('[システム] '+m.content):('['+m.ts+'] '+m.user+': '+m.content);}).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'}));
+  a.download='chat_'+today()+'.txt';a.click();
+}
+
+function exportAll(){
+  var data={logs:getLogs(),blades:getBlades(),chat:getChat(),settings:gs(),exportedAt:new Date().toISOString()};
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='fieldhub_backup_'+today()+'.json';a.click();
+  toast('エクスポートしました');
+}
+
+function doImport(e){
+  var file=e.target.files[0];if(!file)return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    try{
+      var d=JSON.parse(ev.target.result);
+      if(d.logs)set('logs',d.logs);
+      if(d.blades)set('blades',d.blades);
+      if(d.chat)set('chat',d.chat);
+      if(d.settings)set('settings',d.settings);
+      applySettings();renderLogs();renderBlades();renderChat();
+      toast('インポートしました！');
+    }catch(err){toast('読み込みに失敗しました');}
+  };
+  r.readAsText(file);e.target.value='';
+}
+
+function clearAll(){
+  if(!confirm('全データを削除します。この操作は取り消せません。'))return;
+  ['logs','blades','chat','settings'].forEach(function(k){localStorage.removeItem('fh_'+k);});
+  toast('削除しました');setTimeout(function(){location.reload();},800);
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('on');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function today(){return new Date().toISOString().split('T')[0];}
+var _tt;
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('on');},2300);}
+
+document.querySelectorAll('.modal-bg').forEach(function(bg){
+  bg.addEventListener('click',function(e){if(e.target===bg)bg.classList.remove('on');});
+});
+
+applySettings();
+updateDateFilter();
+renderLogs();
+</script>
+</body>
+</html>
